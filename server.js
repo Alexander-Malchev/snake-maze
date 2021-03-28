@@ -424,4 +424,4 @@ app.get('/gen/:id/:name/:texture', (req, res) => {
     }
 })
 
-app.listen(8080, () => console.log("Server is online on: https://localhost:8080/ or 46.249.84.111:8080/"))
+app.listen(8080, () => console.log("Server is online on: https://localhost:8080/"))
