@@ -19,7 +19,7 @@
             border: none;
             cursor: pointer;
         }
-        #chatdiv {
+        .chatdiv {
             position: relative;
             top: -300px;
             left: 0px;
@@ -45,7 +45,7 @@
             </canvas>
         </div>
     </center>
-    <div id="chatdiv">
+    <div id="chatdiv" class="chatdiv">
         <pre>
         <textarea id="chat"></textarea>
         </pre>
@@ -270,6 +270,10 @@
 
     var deb;
 
+    for  ( let i = 0; i < 6; i ++ ) {
+        player.queue.push({x : player.x, y : player.y})
+    }
+
     function update () {
         //console.clear()
         updates++;
@@ -418,7 +422,7 @@
             })
         }
         
-        if (grid.length > 0 && player.playing) {
+        if (grid.length > 0 && player.playing && player.queue.length > 2 ) {
             grid[player.x][player.y].wall.forEach(w => {
                 if (!w) {
                     a++
@@ -430,22 +434,22 @@
             if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
                 player.dy = 0
             }
-            if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 && (player.x != player.queue[player.queue.length - 1].x || player.dx == 0) ) {
+            if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 && player.x - 1 != player.queue[player.queue.length - 2].x ) {
                 player.dx = -1;
                 player.dy = 0
                 runned = stoped;
                 //console.log("left", data.indexOf(player))
-            } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1 && (player.x != player.queue[player.queue.length - 1].x || player.dx == 0)) {
+            } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1 && player.x + 1 != player.queue[player.queue.length - 2].x) {
                 player.dx = 1;
                 player.dy = 0
                 runned = stoped;
                 //console.log("right", data.indexOf(player))
-            } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1 && (player.y != player.queue[player.queue.length - 1].y || player.dy == 0)) {
+            } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1 && player.y - 1 != player.queue[player.queue.length - 2].y ) {
                 player.dy = -1;
                 player.dx = 0
                 runned = stoped;
                 //console.log("top", data.indexOf(player))
-            } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1 && (player.y != player.queue[player.queue.length - 1].y || player.dy == 0) ) {
+            } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1 && player.y + 1 != player.queue[player.queue.length - 1].y ) {
                 player.dy = 1
                 player.dx = 0
                 runned = stoped;
@@ -461,29 +465,31 @@
             player.x += player.dx;
             player.y += player.dy;
 
-            player.queue.push({x: player.x, y: player.y})
-            if ( player.queue.length > player.queueLength ) {
-                player.queue.shift()
+            if ( player.dx != 0 || player.dy != 0 ) {
+                player.queue.push({x: player.x, y: player.y})
+                if ( player.queue.length > player.queueLength ) {
+                    player.queue.shift()
+                }
             }
 
-            // for ( let i = 0; i < data.length; i++ ) {
-            //     if ( data[i].id != player.id) {
-            //         for ( let j = 0; j < data[i].queue.length; j ++ ) {
-            //             if ( player.x == data[i].queue[j].x && player.y == data[i].queue[j].y ) {
-            //                 if ( player.queueLength > data[i].queueLength ) {
-            //                     data[i].playing = false;
-            //                     player.queueLength += data[i].queueLength;
-            //                     player.score += data[i].queueLength
-            //                 } else {
-            //                     player.playing = false;
-            //                     data[i].queueLength += player.queueLength;
-            //                     data[i].score += player.queueLength
-            //                 }
-            //                 makeGET(`${window.location.href.replace("online", "")}get/${data[i].id}/${JSON.stringify(data[i])}`, (res) => {})
-            //             }
-            //         }
-            //     }
-            // }
+            for ( let i = 0; i < data.length; i++ ) {
+                if ( data[i].id != player.id) {
+                    for ( let j = 0; j < data[i].queue.length; j ++ ) {
+                        if ( player.x == data[i].queue[j].x && player.y == data[i].queue[j].y ) {
+                            if ( player.queueLength > data[i].queueLength ) {
+                                data[i].playing = false;
+                                player.queueLength += data[i].queueLength;
+                                player.score += data[i].queueLength
+                            } else {
+                                player.playing = false;
+                                data[i].queueLength += player.queueLength;
+                                data[i].score += player.queueLength
+                            }
+                            makeGET(`${window.location.href.replace("online", "")}get/${data[i].id}/${JSON.stringify(data[i])}`, (res) => {})
+                        }
+                    }
+                }
+            }
 
             for ( let i = 0; i < player.queue.length - 1; i++ ) {
                 if ( player.queue[i].x == player.x && player.queue[i].y == player.y && !(player.dx == 0 && player.dy == 0) ) {
@@ -605,7 +611,7 @@
 
             if ( change ) {
                 context.fillStyle = added < 0 ? "red" : "green"
-                context.fillText(added < 0 ? added : `+${added}`, canvas.width - 210, i * 20 + 30)
+                context.fillText(added < 0 ? added : `+${added}`, canvas.width - 290, i * 20 + 30)
                 context.fillStyle = "white"
                 timer ++;
             }

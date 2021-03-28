@@ -36,6 +36,7 @@ rl.question("> ", function saveInput(command) {
 app.use(express.static('main'))
 app.get('/', (req, res) => res.sendFile(__dirname + '/main/home.html'))
 app.get('/offline', (req, res) => res.sendFile(__dirname + '/main/main.html'));
+app.get('/controls', (req, res) => res.sendFile(__dirname + '/main/controls.html'));
 app.get('/online', (req, res) => res.sendFile(__dirname + '/main/multyplayer.html'))
 app.get('/img/:image', (req, res) => res.sendFile(__dirname + `/main/images/${req.params.image}.png`));
 
@@ -48,11 +49,11 @@ class Player {
         this.dy = 0;
         this.id = id;
         this.name = name;
-        this.queue = [];
+        this.queue = new Array(6).fill({x: this.x, y: this.y});
         this.queueLength = 6;
         this.texture = texture ? `${texture}` : undefined;
         this.playing = true;
-        this.score = 0
+        this.score = 0;
     }
 }
 
@@ -424,4 +425,4 @@ app.get('/gen/:id/:name/:texture', (req, res) => {
     }
 })
 
-app.listen(8080, () => console.log("Server is online on: https://localhost:8080/"))
+app.listen(8080, () => console.log("Server is online on: http://localhost:8080/"))
