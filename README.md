@@ -5,6 +5,6 @@
 <p>Start with</p>
 
 <ul>
-    <li>node server.js</li>
+    <li>node ./server.js</li>
     <li>RUN.bat</li>
 </ul>
