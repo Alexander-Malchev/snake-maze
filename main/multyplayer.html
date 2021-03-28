@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            background: rgb(45, 48, 51);
+            overflow: hidden;
+        }
+        .b {
+            position: relative;
+            top: -5px;
+            background-color: rgb(218, 218, 218);
+            color: rgb(45, 48, 51);
+            padding: 9px 10px;
+            border: none;
+            cursor: pointer;
+        }
+        #chatdiv {
+            position: relative;
+            top: -300px;
+            left: 0px;
+        }
+        #chatdiv #chat{
+            color: orange;
+            position: relative;
+            left: -50px;
+            bottom: 0;
+            background-color: rgb(45, 48, 51);
+            width: 300px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <center>
+        <div>
+            <button class="b" id="mode">Light mode</button>
+        </div>
+        <div>
+            <canvas id="cnv" style="border: 1px solid white;" width="800" height="640">
+            </canvas>
+        </div>
+    </center>
+    <div id="chatdiv">
+        <pre>
+        <textarea id="chat"></textarea>
+        </pre>
+        <input type="text" id="chatInp" style="width: 300px; padding: 10px; color: black;" placeholder="Chat...">
+    </div>
+</body>
+<script>
+
+    var m = 0;
+    var username = prompt("Enter your username")
+
+    $("#mode").click( () => {
+        m++;
+        m = m % 2;
+        mode(m)
+    })
+
+    function random( from, to ) {
+        return Math.floor(Math.random() * (to  - from)) + from;
+    }
+
+    function texture (img) {
+        var obj = new Image()
+        obj.src = img;
+        return obj;
+    }
+
+    function mode(b){
+        var mode = b ? "rgb(45, 48, 51)" : "rgb(218, 218, 218)";
+        var out = b ? "Light" : "Dark";
+        var br = b ? "rgb(218, 218, 218)" : "rgb(45, 48, 51)";
+        $("body").css("background-color", mode)
+        $("canvas").css("border", "1px solid " + br)
+        $("*").css("color", br);
+        $("#mode").css("background-color", br);
+        $("#mode").css("color", mode)
+        $("#mode").text(out + " mode")
+        $("#chat").css("color", "orange")
+        $("#chat").css("background-color", mode)
+        style = br; 
+        // clearTimeout(timer)
+        // pathColor = mode;
+        // wallColor = br;
+        // x = width/2|0
+        // y = height/2|0
+        // init()
+        // upd()
+    }
+
+    const canvas = document.getElementById("cnv")
+    const context = canvas.getContext("2d")
+    	
+    //mode style
+    var style = "white"
+
+    //grid
+    var grid = [];
+    var w = 20;
+
+    var score = 0, bs = 0, added = 0;
+    var leaderboard = []
+
+    var apple = []
+
+    //player
+    var player = {
+        x: 0,
+        y: 0,
+        dx: 0,
+        dy: 0,
+        queue: [],
+        name: "",
+        queueLength: 6,
+        playing: true,
+        score: 0
+    }, id = 0, timer = 1, change = false;
+
+    //chat
+    var msg = []
+
+
+// class Apple {
+//     constructor(x, y, power, catched) {
+//         this.x = x;
+//         this.y = y;
+//         this.power = power;
+//         this.color = c[this.power]
+//         this.shouldDie = false
+//         this.catched = !catched ? 0 : catched;
+//         this.end = random(2, 10)
+//     }
+//     show () {
+//         context.fillStyle = this.color;
+//         context.fillRect(this.x * w + 5, this.y * w + 5, w - 10, w - 10);
+//     }
+//     update (player) {
+//         if ( this.collid(player.x, player.y) ) {
+//             switch (this.power) {
+//                 case 0:
+//                     player.queueLength ++;
+//                     break;
+//                 case 1:
+//                     player.queueLength --;
+//                     break;
+//                 case 2:
+//                     this.catched ++;
+//                     break;
+//             }
+//             this.catched++;
+//             if ( this.power == 2 ) {
+//                 if ( this.catched >= this.end ) {
+//                     this.shouldDie = true;
+//                     player.queueLength += 5;
+//                 } else {
+//                     this.x = random(0, grid.length);
+//                     this.y = random(0, grid[0].length);
+//                 }
+//             } else {
+//                 this.shouldDie = true;
+//             }
+//         }
+//     }
+//     collid (x, y) {
+//         return x == this.x && y == this.y;
+//     }
+// }
+
+    var c = ["red", "green", "orange"];
+    class Apple {
+        constructor(x, y, power) {
+            this.x = x;
+            this.y = y;
+            this.power = power;
+            this.color = c[this.power]
+            this.shouldDie = false
+            this.catched = 0;
+            this.end = random(2, 10)
+        }
+    }
+
+    function makeGET(URL, callback) {
+        fetch(URL)
+        .then(response => response.text())
+        .then(text => callback(text));
+    }
+
+    makeGET (window.location.href.replace("online", "") + 'post/validid', (text) => {
+        id = Number(text)
+        console.log(text)
+    })
+
+    makeGET (`${window.location.href.replace("online", "")}update/apple`, (res) => {
+        apple = JSON.parse(res)
+    })
+
+    makeGET (window.location.href.replace("online", "") + "update/msg", (res) => {
+        msg = JSON.parse(res)
+    })
+
+    console.log(id)
+
+    var data = []
+
+    makeGET(window.location.href.replace("online", "") + "getdata", (res) => {
+        data = JSON.parse(res)
+    })
+
+    //system vars
+    let stoped = true, runned = false;
+    let b = 0, updates = 0;
+
+    var keyPressed = new Array(256).fill(0)
+
+    $("#chatInp").keydown( (e) => {
+        keyPressed[e.keyCode] = 0;
+    })
+
+    document.addEventListener("keyup", (e) => {
+        keyPressed[e.keyCode] = 0;
+        if (e.keyCode == 13) {
+            const message = document.getElementById("chatInp").value;
+            makeGET(window.location.href.replace("online", "") + "msg/" + message + "/" + player.name, (res) => document.getElementById("chatInp").value = "")
+            makeGET (window.location.href.replace("online", "") + "update/msg", (res) => {
+                msg = JSON.parse(res)
+            })
+        }
+    })
+
+    document.addEventListener ( "keydown", ( e ) => {
+        keyPressed[e.keyCode] = 1;
+        // if ( e.keyCode == 32 ) {
+        //     if ( deb ) {
+        //         clearInterval(deb)
+        //         deb = undefined;
+        //     } else {
+        //         deb = setInterval(update, 10)
+        //     }
+        // }
+    })
+
+    window.onbeforeunload = (e) => {
+        if (player.playing)
+            makeGET(window.location.href.replace("online", "") + "exit/" + player.id, (res) => {
+                e.preventDefault();
+                e.returnValue = '';
+            })
+    };
+
+    function updateChat () {
+        var out = ""
+        for ( let i of msg ) {
+            out += "[" + i.name + "] : " + i.msg + "\n";
+            document.getElementById("chat").innerHTML = out
+        }
+    }
+
+    player.id = id;
+
+    makeGET(window.location.href.replace("online", "") + "gen/" + player.id + "/" + username + "/" + random(1, 4), (n) => {
+        player = JSON.parse(n) 
+    })
+
+    var deb;
+
+    function update () {
+        //console.clear()
+        updates++;
+        player.id = id;
+
+        // for ( let i = 0; i < apple.length; i++ ) {
+        //     apple[ i ] = new Apple(apple[i].x, apple[i].y, apple[i].power, apple[i].catched)
+        // }
+
+        if ( player.score < 0 ) {
+            player.score = 0;
+        }
+
+        if ( !player.playing)
+            makeGET(`${window.location.href.replace("online", "")}exit/${player.id}`, (res) => {
+                // console.log("left.")
+            })
+
+        for ( let i = 0; i < apple.length; i++ ) {
+            if ( apple[ i ].x == player.x && apple[ i ].y == player.y ) {
+                bs = player.score;
+                switch (apple[ i ].power) {
+                    case 0:
+                        player.queueLength ++;
+                        break;
+                    case 1:
+                        player.queueLength --;
+                        break;
+                    case 2:
+                        apple[ i ].catched ++;
+                        break;
+                }
+                apple[ i ].catched++;
+                if ( apple[ i ].power == 2 ) {
+                    if ( apple[ i ].catched >= apple[ i ].end ) {
+                        apple[ i ].shouldDie = true;
+                        player.queueLength += 5;
+                    } else {
+                        apple[ i ].x = random(0, grid.length);
+                        apple[ i ].y = random(0, grid[0].length);
+                    }
+                } else {
+                    apple[ i ].shouldDie = true;
+                }
+            }
+            if ( apple[ i ].shouldDie ) {
+                switch ( apple[ i ].power ) {
+                    case 0:
+                        player.score ++;
+                        break;
+                    case 1:
+                        player.score --;
+                        break;
+                    case 2:
+                        player.score += 5;
+                        break;
+                }
+                apple[ i ] = apple[ apple.length - 1 ];
+                apple.pop()
+
+                added = player.score - bs
+                console.log(player.score, bs, added)
+
+                var j =0;
+                for ( let i = 0; i < apple.length; i ++ ) {
+                    if ( apple[ i ].power == 0 ) {
+                        j++;
+                    }
+                }
+                if ( j == 0 ) {
+                    for ( let i = 0; i < random(5, 10); i ++ ) {
+                        apple.push(new Apple( random(0, canvas.width), random(0, canvas.height), random(0, 3)) );
+                    }
+                }
+                // console.log("I think you fucked up something")
+                makeGET(`${window.location.href.replace("online", "")}post/apple/${JSON.stringify(apple)}`, (res) => {
+                    // console.log("apple updated!")
+                })
+                
+                makeGET(`${window.location.href.replace("online", "")}post/score/${id}/${player.score}`, (res) => {
+                    // console.log("score updated!")
+                })
+                makeGET(`${window.location.href.replace("online", "")}update/lb`, (res) => {
+                    leaderboard = JSON.parse(res)
+                    // console.log("leaderboard fetched!")
+                })
+            }
+        }
+ 
+        let a = 0;
+
+        if ( grid.length > 0 ) {
+            for ( let x = 0; x < grid.length; x ++ ) {
+                for ( let y = 0; y < grid[x].length; y ++ ) {
+                    grid[x][y].show = function () {
+                        //drawing the walls of a cell
+                        context.beginPath()
+                        context.strokeStyle = style; 
+                        //top
+                        if ( grid[x][y].wall[0] ) {
+                            context.moveTo (grid[x][y].x, grid[x][y].y)
+                            context.lineTo (grid[x][y].x + w, grid[x][y].y)
+                        }
+                        //right
+                        if ( grid[x][y].wall[1] ) {
+                            context.moveTo (grid[x][y].x + w, grid[x][y].y)
+                        context.lineTo (grid[x][y].x + w, grid[x][y].y + w)
+                        }
+                        //bottom
+                        if ( grid[x][y].wall[2] ) {
+                            context.moveTo (grid[x][y].x + w, grid[x][y].y + w)
+                        context.lineTo (grid[x][y].x, grid[x][y].y + w)
+                        }
+                        //left
+                        if ( grid[x][y].wall[3] ) {
+                            context.moveTo (grid[x][y].x, grid[x][y].y + w)
+                        context.lineTo (grid[x][y].x, grid[x][y].y)
+                        }
+                        context.stroke()
+                    }
+                }
+            }
+        }
+
+        if ( updates % 500 == 0 && grid.length == 0 ) {
+            makeGET (window.location.href.replace("online", "") + "map", (res) => {
+                grid = JSON.parse(res)
+            })
+        }
+
+        if ( updates % 100 == 0 ) {
+            makeGET (window.location.href.replace("online", "") + "update/msg", (res) => {
+                msg = JSON.parse(res)
+            })
+            updateChat()
+            makeGET(`${window.location.href.replace("online", "")}update/apple`, (res) => {
+                apple = JSON.parse(res)
+                // console.log("apple fetched!")
+            })
+            makeGET(`${window.location.href.replace("online", "")}post/score/${id}/${player.score}`, (res) => {
+                // console.log("score updated!")
+            })
+            makeGET(`${window.location.href.replace("online", "")}update/lb`, (res) => {
+                leaderboard = JSON.parse(res)
+                // console.log("leaderboard fetched!")
+            })
+        }
+        
+        if (grid.length > 0 && player.playing) {
+            grid[player.x][player.y].wall.forEach(w => {
+                if (!w) {
+                    a++
+                }    
+            });
+            if ((grid[player.x][player.y].wall[3] && player.dx == -1) || (grid[player.x][player.y].wall[1] && player.dx == 1)) {
+                player.dx = 0
+            }
+            if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
+                player.dy = 0
+            }
+            if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 && (player.x != player.queue[player.queue.length - 1].x || player.dx == 0) ) {
+                player.dx = -1;
+                player.dy = 0
+                runned = stoped;
+                //console.log("left", data.indexOf(player))
+            } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1 && (player.x != player.queue[player.queue.length - 1].x || player.dx == 0)) {
+                player.dx = 1;
+                player.dy = 0
+                runned = stoped;
+                //console.log("right", data.indexOf(player))
+            } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1 && (player.y != player.queue[player.queue.length - 1].y || player.dy == 0)) {
+                player.dy = -1;
+                player.dx = 0
+                runned = stoped;
+                //console.log("top", data.indexOf(player))
+            } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1 && (player.y != player.queue[player.queue.length - 1].y || player.dy == 0) ) {
+                player.dy = 1
+                player.dx = 0
+                runned = stoped;
+                //console.log("bottom", data.indexOf(player))
+            }
+        }   
+
+        if ( player.queueLength < 0 ) {
+            player.playing = false;
+        }
+
+        if ( updates % 20 == 0 && player.playing ) {
+            player.x += player.dx;
+            player.y += player.dy;
+
+            player.queue.push({x: player.x, y: player.y})
+            if ( player.queue.length > player.queueLength ) {
+                player.queue.shift()
+            }
+
+            // for ( let i = 0; i < data.length; i++ ) {
+            //     if ( data[i].id != player.id) {
+            //         for ( let j = 0; j < data[i].queue.length; j ++ ) {
+            //             if ( player.x == data[i].queue[j].x && player.y == data[i].queue[j].y ) {
+            //                 if ( player.queueLength > data[i].queueLength ) {
+            //                     data[i].playing = false;
+            //                     player.queueLength += data[i].queueLength;
+            //                     player.score += data[i].queueLength
+            //                 } else {
+            //                     player.playing = false;
+            //                     data[i].queueLength += player.queueLength;
+            //                     data[i].score += player.queueLength
+            //                 }
+            //                 makeGET(`${window.location.href.replace("online", "")}get/${data[i].id}/${JSON.stringify(data[i])}`, (res) => {})
+            //             }
+            //         }
+            //     }
+            // }
+
+            for ( let i = 0; i < player.queue.length - 1; i++ ) {
+                if ( player.queue[i].x == player.x && player.queue[i].y == player.y && !(player.dx == 0 && player.dy == 0) ) {
+                    player.queueLength -= (i + 1);
+                    player.score -= (i + 1);
+                    break;
+                }
+            }
+
+            //console.log(window.location.href.replace("online", "") + "get/" + player.id + "/" + JSON.stringify(player))
+            // console.log(JSON.stringify(player))
+            makeGET(window.location.href.replace("online", "") + "get/" + player.id + "/" + JSON.stringify(player), (res) => {})
+
+            makeGET(window.location.href.replace("online", "") + "getdata", (res) => {
+                data = JSON.parse(res)
+            })
+
+            makeGET(`${window.location.href.replace("online", "")}update/lb`, (res) => {
+                leaderboard = JSON.parse(res)
+                // console.log("leaderboard fetched!")
+            })
+        }
+
+        if (runned) {
+            b++;
+        }
+        if (b > 2) {
+            b = 0
+            runned = false;
+            stoped = false;
+        }
+        if (a == 3 && !stoped) { 
+            console.log(runned, stoped, b, a)
+            player.dx = 0
+            player.dy = 0
+            stoped = true;
+        }
+    }
+
+    //drawing on the canvas
+    function draw () {  
+        window.requestAnimationFrame(draw)
+        context.clearRect(0, 0, canvas.width, canvas.height)
+
+        if ( grid.length == 0 ) {
+            context.fillStyle = "yellow";
+            context.font = "30px Arial";
+            context.fillText("Loading terian", 30, 50)
+        }
+
+        //player
+        const pls = w - 1
+        const h = 1
+        for ( let i = 0; i < apple.length; i++ ) {
+            context.fillStyle = apple[ i ].color;
+            context.fillRect(apple[ i ].x * w + 5, apple[ i ].y * w + 5, w - 10, w - 10);
+        }
+
+
+        if ( data.length > 0 && player.playing ) {
+            for ( let i = 0; i < data.length; i ++ ) {
+                context.fillStyle = data[i].id == player.id ? "yellow" : "green";
+                try{
+                    context.drawImage(texuture(`${window.location.href.replace("online", "")}img/${data[i].texture}`), data[i].x * w + h, data[i].y * w + h, pls, pls);
+                } catch ( err ) {
+                    context.fillRect(data[i].x * w + h, data[i].y * w + h, pls, pls)
+                }
+
+                //player's queue
+                for ( let n = 0; n < data[i].queue.length; n ++ ) {
+                    try {
+                        // context.fillText(n, data[i].queue[n].x * w + h, data[i].queue[n].y * w + h)
+                        context.drawImage(texture(`${window.location.href.replace("online", "")}img/${data[i].texture}`), data[i].queue[n].x * w + h, data[i].queue[n].y * w + h, pls, pls)
+                    } catch ( err ) {
+                        context.fillRect(data[i].queue[n].x * w + h, data[i].queue[n].y * w + h, pls, pls)
+                    }
+                }
+            }
+        }
+
+        if ( !player.playing ) {
+            context.globalAlpha = 0.5;
+            context.fillStyle = "black"
+            context.fillRect(0, 0, canvas.width, canvas.height)
+            context.globalAlpha = 1;
+            context.fillStyle = "red"
+            context.font="30px Arial"
+            context.fillText("Game Over! F5 to restart", 30, 30)
+        }
+
+        //maze 
+        if ( grid.length > 0 ) { 
+            for ( let x = 0; x < grid.length; x ++ ) {
+                for ( let y = 0; y < grid[x].length; y++){
+                    grid[x][y].show()
+                }
+            }
+        }
+        // if (player.x == grid.length - 1 && player.y == grid[0].length - 1) {
+        //     console.log("victory")
+        // }
+
+        context.globalAlpha = 0.5
+        context.fillStyle = "black"
+        context.fillRect ( canvas.width - 300, 10, 290, 100)
+        if ( leaderboard.length == 0 ) {
+            leaderboard.push({name: username, score: 0})
+        }
+        context.globalAlpha = 1;
+        leaderboard = leaderboard.sort((a, b) => b.score - a.score);
+        for ( let i = 0; i < (leaderboard.length >= 5 ? 5 : leaderboard.length); i++ ) {
+            context.fillStyle = "white"
+            context.font = "20px Arial"
+
+            if (added != 0 && player.id == leaderboard[i].id ) {
+                change = true
+                added = 0
+            }
+
+            if ( change ) {
+                context.fillStyle = added < 0 ? "red" : "green"
+                context.fillText(added < 0 ? added : `+${added}`, canvas.width - 210, i * 20 + 30)
+                context.fillStyle = "white"
+                timer ++;
+            }
+            if ( timer % 50 == 0 ) {
+                timer = 1;
+                change = false
+            }
+            context.fillText(`${leaderboard[i].name} : ${leaderboard[i].score}`, canvas.width - 200, i * 20 + 30)
+        }
+    }
+
+    deb = setInterval(update, 10)
+    draw()
+</script>
+</html>

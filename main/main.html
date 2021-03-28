@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            background: rgb(45, 48, 51);
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            color: white;
+        }
+        .b {
+            position: relative;
+            top: -5px;
+            background-color: rgb(218, 218, 218);
+            color: rgb(45, 48, 51);
+            padding: 9px 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <center>
+        <div>
+            <button class="b" id="mode">Light mode</button>
+        </div>
+        <div>
+            <canvas id="cnv" style="border: 1px solid white;" width="800" height="620">
+            </canvas>
+        </div>
+        <div>
+            <p id="score">Score: 1, Max score: 1</p>
+        </div>
+    </center>
+</body>
+<script>
+
+    var score = 1;
+    var WorldScore = 1;
+
+    function makeGET(URL, callback) {
+        fetch(URL)
+        .then(response => response.text())
+        .then(text => callback(text));
+    }
+
+    function random(from, to) {
+        return Math.floor(Math.random() * (to - from)) + from;
+    }
+
+    makeGET(window.location.href.replace("offline", "") + "score/" + score, (res) => {
+        WorldScore = Number(res)
+        document.getElementById("score").innerHTML = "Score: " + score + ", Max score: " + WorldScore;
+    })
+
+    var m = 0, c = ["red", "green", "orange"];
+
+    class Apple {
+        constructor(x, y, power) {
+            this.x = x;
+            this.y = y;
+            this.power = power;
+            this.color = c[this.power]
+            this.shouldDie = false
+            this.catched = 0;
+            this.end = random(2, 10)
+        }
+        show () {
+            context.fillStyle = this.color;
+            context.fillRect(this.x * w + 5, this.y * w + 5, w - 10, w - 10);
+        }
+        update () {
+            if ( this.collid(player.x, player.y) ) {
+                switch (this.power) {
+                    case 0:
+                        player.queueLength ++;
+                        score ++;
+                        break;
+                    case 1:
+                        player.queueLength --;
+                        score --;
+                        break;
+                    case 2:
+                        this.catched ++;
+                        break;
+                }
+                this.catched++;
+                if ( this.power == 2 ) {
+                    if ( this.catched >= this.end ) {
+                        this.shouldDie = true;
+                        score += 5;
+                        player.queueLength += 5;
+                    } else {
+                        this.x = random(0, grid.length);
+                        this.y = random(0, grid[0].length);
+                    }
+                } else {
+                    this.shouldDie = true;
+                }
+            }
+        }
+        collid (x, y) {
+            return x == this.x && y == this.y;
+        }
+    }
+
+    document.getElementById("mode").addEventListener("onclick", () => {
+        m++;
+        m = m % 2;
+        mode(m)
+    })
+
+    function mode(b){
+        var mode = b ? "rgb(45, 48, 51)" : "rgb(218, 218, 218)";
+        var out = b ? "Light" : "Dark";
+        var br = b ? "rgb(218, 218, 218)" : "rgb(45, 48, 51)";
+        $("body").css("background-color", mode)
+        $("canvas").css("border", "1px solid " + br)
+        $("*").css("color", br);
+        $("#mode").css("background-color", br);
+        $("#mode").css("color", mode)
+        $("#mode").text(out + " mode")
+        style = br; 
+        // clearTimeout(timer)
+        // pathColor = mode;
+        // wallColor = br;
+        // x = width/2|0
+        // y = height/2|0
+        // init()
+        // upd()
+    }
+    $("button").click(function() {
+        m++;
+        mode(m % 2)
+    });
+
+    const canvas = document.getElementById("cnv")
+    const context = canvas.getContext("2d")
+    	
+    //mode style
+    var style = "white"
+
+    //grid
+    var grid = [];
+    var w = 20;
+
+    //current grid cell
+    var current, finished = false;
+
+    //backup for stucking
+    var visitedcell = []
+
+    //player
+    var player = {
+        x: 0,
+        y: 0,
+        dx: 0,
+        dy: 0,
+        queue: [], 
+        queueLength: 6
+    }
+
+    var apple = []
+
+    //system vars
+    let stoped = true, runned = false;
+    let b = 0, updates = 0;
+
+    //removing walls
+    function removeWall(cell1, cell2) {
+        if ( Math.sign (cell1.x - cell2.x) < 0 ) {
+            cell1.wall[1] = false;
+            cell2.wall[3] = false;
+        } else if ( Math.sign(cell1.x - cell2.x) > 0 ) {
+            cell1.wall[3] = false;
+            cell2.wall[1] = false;
+        } else if  ( Math.sign(cell1.y - cell2.y ) < 0 ) {
+            cell1.wall[2] = false;
+            cell2.wall[0] = false;
+        } else if  ( Math.sign(cell1.y - cell2.y ) > 0 ) {
+            cell1.wall[0] = false;
+            cell2.wall[2] = false;
+        }
+        return {cell1: cell1, cell2: cell2}
+    }
+
+    //cell object
+    function Cell (x, y) {
+            //coordinates
+        this.x = x;
+        this.y = y;
+        
+        //walls
+        this.wall = [
+            true,
+            true,
+            true,
+            true
+        ]
+        
+        //is visited
+        this.visited = false;
+
+        //function for the path finding
+        this.visistedNeighbours = function () {
+            var visistedN = []
+            try {
+                if ( !grid[ this.x / w ][ this.y / w - 1 ].wall[2] ) {
+                    visistedN.push(grid[ this.x / w ][ this.y / w - 1 ])
+                }
+            } catch (e) {}
+
+            try {
+                if ( !grid[ this.x / w ][ this.y / w + 1 ].wall[0] ) {
+                    visistedN.push( grid[ this.x / w ][ this.y / w + 1 ] )
+                }
+            } catch (e) {}
+
+            try {
+                if ( !grid[ this.x / w - 1 ][ this.y / w ].wall[3] ) {
+                    visistedN.push( grid[ this.x / w - 1 ][ this.y / w ] )
+                }
+            } catch (e) {}
+            try {
+                if ( !grid[ this.x / w + 1 ][ this.y / w ].wall[1] ) {
+                    visistedN.push( grid[ this.x / w + 1 ][ this.y / w ] )
+                }
+            } catch (e) {}
+            return visistedN
+        }
+        
+        //checking neighbours
+        this.checkNeighbours = function () {
+            var neighbours = [], top, right, bottom, left
+            try {
+                top = grid[ this.x / w ][ this.y / w - 1 ]
+            } catch (e) {}
+            try {
+                right = grid[ this.x / w + 1 ][ this.y / w ]
+            } catch (e) {}
+            try {
+                bottom = grid[ this.x / w ][ this.y / w + 1 ] 
+            } catch (e) {}
+            try {
+                left = grid[ this.x / w - 1 ][ this.y / w ]
+            } catch (e) {}
+            if ( top ) { 
+                if( !top.visited ) {
+                    neighbours.push(top)
+                }
+            }
+            if ( right) { 
+                if( !right.visited ) {
+                    neighbours.push(right)
+                }
+            }
+            if ( bottom) { 
+                if( !bottom.visited ) {
+                    neighbours.push(bottom)
+                }
+            }
+            if ( left) { 
+                if( !left.visited ) {
+                    neighbours.push(left)
+                }
+            }
+            if (neighbours.length > 0) {
+                return neighbours[
+                    Math.floor ( Math.random () * 
+                    neighbours.length )
+                ]
+            }
+        }
+        
+        //drawing the walls of a cell
+        this.show = function () {
+            if ( this.visited ) {
+                context.beginPath()
+                context.strokeStyle = style; 
+                //top
+                if ( this.wall[0] ) {
+                    context.moveTo (this.x, this.y)
+                    context.lineTo (this.x + w, this.y)
+                }
+                //right
+                if ( this.wall[1] ) {
+                    context.moveTo (this.x + w, this.y)
+                    context.lineTo (this.x + w, this.y + w)
+                }
+                //bottom
+                if ( this.wall[2] ) {
+                    context.moveTo (this.x + w, this.y + w)
+                    context.lineTo (this.x, this.y + w)
+                }
+                //left
+                if ( this.wall[3] ) {
+                    context.moveTo (this.x, this.y + w)
+                    context.lineTo (this.x, this.y)
+                }
+                // if ( this.visited ) {
+                //     context.fillStyle = "black"
+                //     context.fillRect ( this.x, this.y, w, w)
+                // }
+                //context.fill()
+                context.stroke()
+            }
+        }
+    }
+
+    //generating empty grid
+    function reset () {
+        for ( let x = 0; x < canvas.width / w; x ++ ) {
+            grid[x] = []
+            for ( let y = 0; y < canvas.height / w; y ++ ) {
+                grid[x][y] = new Cell(x * w, y * w)
+                /* grid[x][y].wall[Math.floor (Math.random () * grid[x][y].wall.length)] 				= Math.floor (Math.random () * 100) > 50 */
+            }
+        }
+
+        for ( let i = 0; i < random(5, 20); i ++ ) {
+            apple.push(new Apple(random(0, grid.length), random(0, grid[0].length), random(0, 3)))
+        }
+        current = grid[0][0]
+    }
+    reset()
+
+    var keyPressed = new Array(256).fill(0)
+
+    document.addEventListener("keyup", (e) => {
+        keyPressed[e.keyCode] = 0;
+    })
+
+    document.addEventListener ( "keydown", ( e ) => {
+        keyPressed[e.keyCode] = 1;
+    })
+
+    function update () {
+        updates++;
+
+        for ( let i = 0; i < apple.length; i++ ) {
+            apple[ i ].update()
+            if ( apple[ i ].shouldDie ) {
+                apple[ i ] = apple[ apple.length - 1 ];
+                apple.pop()
+                document.getElementById("score").innerHTML = "Score: " + score + ", Max score: " + WorldScore;
+            }
+        }
+        // if (finished) {
+        //     for ( let x = 10; x < grid.length - 11; x ++ ) {
+        //         for ( let y = 10; y < grid[x].length - 11; y ++ ) {
+        //             let new1 = removeWall(grid[x][y], grid[x + 1][y])
+        //             let new2 = removeWall(new1.cell1, grid[x][y + 1])
+        //             grid[x][y] = new2.cell1;
+        //             grid[x + 1][y] = new1.cell2;
+        //             grid[x][y + 1] = new2.cell2;
+        //         }
+        //     }
+        //     finished = undefined;
+        // }
+ 
+        let a = 0;
+        
+        if ( updates % 20 == 0 ) {
+            player.x += player.dx;
+            player.y += player.dy;
+
+            player.queue.push({x: player.x, y: player.y})
+            if ( player.queue.length > player.queueLength ) {
+                player.queue.shift()
+            }
+        }
+        grid[player.x][player.y].wall.forEach(w => {
+            if (!w) {
+                a++
+            }    
+        });
+        if ((grid[player.x][player.y].wall[3] && player.dx == -1) || (grid[player.x][player.y].wall[1] && player.dx == 1)) {
+            player.dx = 0
+        }
+        if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
+            player.dy = 0
+        }
+        if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 ) {
+            player.dx = -1;
+            player.dy = 0
+            runned = stoped;
+        } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1) {
+            player.dx = 1;
+            player.dy = 0
+            runend = stoped;
+        } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1) {
+            player.dy = -1;
+            player.dx = 0
+            runend = stoped;
+        } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1) {
+            player.dy = 1
+            player.dx = 0
+            runend = stoped;
+        }
+        if (runned) {
+            b++;
+        }
+        if (b > 2) {
+            b = 0
+            runned = false;
+            stoped = false;
+        }
+        if (a == 3 && !stoped) { 
+            console.log(runend, stoped, b, a)
+            player.dx = 0
+            player.dy = 0
+            stoped = true;
+        }
+    }
+
+    //drawing on the canvas
+    function draw () {
+        window.requestAnimationFrame(draw)
+        context.clearRect(0, 0, canvas.width, canvas.height)
+
+        //player
+        const pls = w - 1
+        const h = 1
+        context.fillStyle = "green";
+        context.fillRect(player.x * w + h, player.y * w + h, pls, pls)
+
+        //finish
+        context.fillStyle = "orange"
+        context.fillRect ( canvas.width - w, canvas.height - w, w, w)
+
+        //player's queue
+        for ( let n = 0; n < player.queue.length; n ++ ) {
+            context.fillStyle = "green";
+            context.fillRect(player.queue[n].x * w + h, player.queue[n].y * w + h, pls, pls)
+        }
+
+        //maze  
+        for ( let x = 0; x < grid.length; x ++ ) {
+                for ( let y = 0; y < grid[x].length; y++){
+                grid[x][y].show()
+            }
+        }
+
+        for ( let i = 0; i < apple.length; i++ ) {
+            apple[i].show()
+        }
+
+        current.visited = true;
+        var next = current.checkNeighbours()
+        if ( next ) {
+            visitedcell.push(current)
+            next.visited = true;
+            let newalls = removeWall(current, next)
+            current = newalls.cell1;
+            next = newalls.cell2;
+            current = next
+        } else {
+            if (visitedcell.length > 0) {
+                current = visitedcell [visitedcell.length - 1]
+                visitedcell.pop()
+            } else if (finished !== undefined) {
+                finished = true;
+            }
+        }
+        if (player.x == grid.length - 1 && player.y == grid[0].length - 1) {
+            score++;
+            makeGET(window.location.href.replace("offline", "") + "score/" + score, (res) => {
+                WorldScore = Number(res)
+                document.getElementById("score").innerHTML = "Score: " + score + ", Max score: " + WorldScore;
+            })
+            player.x = 0;
+            player.y = 0;
+            reset()
+        }
+    }
+
+    setInterval(update, 10)
+    draw()
+</script>
+</html>
