@@ -12,7 +12,7 @@
         font-size: 20px;
     }
     body{
-        background-color: azure;
+        background-color: rgb(45, 48, 51);
     }
     h3{
         color: rgb(58, 58, 58);
@@ -46,18 +46,75 @@
         height: 200px;
         padding: 50px 50px;
     }
+    #text, #moving {
+        transition: all 1s ease;
+    }
+    #text {
+        transform: translateX(-100%);
+    }
+    svg:hover #text {
+        transform: translateX(0%);
+    }
+    #moving {
+        transform-origin: 38px 50px;
+    }
+    svg:hover #moving {
+        /* transform-origin: translate(275px) 50px; */
+        transform: rotate(360deg);
+    }
+    svg {
+        cursor: pointer;
+    }
 </style>
 <body>
-    <div class="bk"></div>
-    <center>
-        <div class="container">
-            <h3>Snake game</h3>
-            <a href="/offline">Offline</a>
-            <p></p>
-            <a href="/online">Online</a>    
-            <p></p>
-            <a href="/controls">Controls</a>    
-        </div>
-    </center>
+    <svg id="offline" width="398" height="100" viewBox="0 0 398 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- <rect width="398" height="100" fill="white"/> -->
+        <g id="text">
+            <rect id="text_back" x="14" y="25" width="274" height="50" fill="#00FF00" fill-opacity="0.5"/>
+            <text x="220" y="60" fill="white">Offline</text>
+        </g>
+        <rect id="beginning" y="10" width="13" height="80" fill="#666666"/>
+        <rect id="moving" x="13" y="25" width="50" height="50" fill="#00FF00"/>
+    </svg>
+    <div></div>
+
+    <svg id="online" width="398" height="100" viewBox="0 0 398 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- <rect width="398" height="100" fill="white"/> -->
+        <g id="text">
+            <rect id="text_back" x="14" y="25" width="274" height="50" fill="#ff9d00" fill-opacity="0.5"/>
+            <text x="220" y="60" fill="white">Online</text>
+        </g>
+        <rect id="beginning" y="10" width="13" height="80" fill="#666666"/>
+        <rect id="moving" x="13" y="25" width="50" height="50" fill="#ff9d00"/>
+    </svg>
+    <div></div>
+
+    <svg id="controls" width="398" height="100" viewBox="0 0 398 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- <rect width="398" height="100" fill="white"/> -->
+        <g id="text">
+            <rect id="text_back" x="14" y="25" width="274" height="50" fill="#006eff" fill-opacity="0.5"/>
+            <text x="200" y="60" fill="white">Controls</text>
+        </g>
+        <rect id="beginning" y="10" width="13" height="80" fill="#666666"/>
+        <rect id="moving" x="13" y="25" width="50" height="50" fill="#006eff"/>
+    </svg>
+    <script>
+        window.onload = () => {
+            if ( localStorage.length == 0 ) {
+                window.location.href += "controls" 
+            }
+        }
+        document.getElementById("offline").onmouseup= (e) => {
+            window.location.href += "offline";
+        }
+        
+        document.getElementById("online").onmouseup= (e) => {
+            window.location.href += "online";
+        }
+
+        document.getElementById("controls").onmouseup= (e) => {
+            window.location.href += "controls";
+        }
+    </script>
 </body>
 </html> 

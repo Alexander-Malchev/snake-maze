@@ -434,22 +434,22 @@
             if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
                 player.dy = 0
             }
-            if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 && player.x - 1 != player.queue[player.queue.length - 2].x ) {
+            if (keyPressed[JSON.parse(localStorage.left).key] && !grid[player.x][player.y].wall[3] && player.dx != 1 && player.x - 1 != player.queue[player.queue.length - 2].x ) {
                 player.dx = -1;
                 player.dy = 0
                 runned = stoped;
                 //console.log("left", data.indexOf(player))
-            } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1 && player.x + 1 != player.queue[player.queue.length - 2].x) {
+            } else if ( keyPressed[JSON.parse(localStorage.right).key] && !grid[player.x][player.y].wall[1] && player.dx != -1 && player.x + 1 != player.queue[player.queue.length - 2].x) {
                 player.dx = 1;
                 player.dy = 0
                 runned = stoped;
                 //console.log("right", data.indexOf(player))
-            } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1 && player.y - 1 != player.queue[player.queue.length - 2].y ) {
+            } else if (keyPressed[JSON.parse(localStorage.up).key] && !grid[player.x][player.y].wall[0] && player.dy != 1 && player.y - 1 != player.queue[player.queue.length - 2].y ) {
                 player.dy = -1;
                 player.dx = 0
                 runned = stoped;
                 //console.log("top", data.indexOf(player))
-            } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1 && player.y + 1 != player.queue[player.queue.length - 1].y ) {
+            } else if ( keyPressed[JSON.parse(localStorage.down).key] && !grid[player.x][player.y].wall[2] && player.dy != -1 && player.y + 1 != player.queue[player.queue.length - 1].y ) {
                 player.dy = 1
                 player.dx = 0
                 runned = stoped;

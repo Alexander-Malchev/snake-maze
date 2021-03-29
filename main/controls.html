@@ -6,10 +6,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controls</title>
 </head>
+<style>
+    *{
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    input[type=button] {
+        background-color: rgb(66, 66, 66);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+    }
+    .button {
+        padding: 10px 30px;
+        color: white;
+        background: green;
+        font-size: 20px;
+        border: none;
+        cursor: pointer;
+    }
+</style>
 <body>
-    <center>
-        <p><b>WASD</b> - Move</p>
-        <p>Enjoy!</p>
-    </center>
+    <h2>Set up controls</h2>
+    <h3>Move up: <input type="button" id="up" value="W"></h3>
+    <h3>Move down: <input type="button" id="down" value="S"></h3>
+    <h3>Move left: <input type="button" id="left" value="A"></h3>
+    <h3>Move right: <input type="button" id="right" value="D"></h3>
+    <button class="button" onclick="window.location.href = window.location.href.replace('controls', '')">Back</button>
+    <script>
+        if ( !localStorage.up ) {
+            localStorage.up = JSON.stringify({key: 87, name: "w"})
+        } else {
+            document.getElementById("up").value = JSON.parse(localStorage.up).name.toLocaleUpperCase()
+        }
+
+        if ( !localStorage.left ) {
+            localStorage.left = JSON.stringify({ key: 65, name: "a" })
+        } else {
+            document.getElementById("left").value = JSON.parse(localStorage.left).name.toLocaleUpperCase()
+        }
+
+        if ( !localStorage.right ) {
+            localStorage.right = JSON.stringify({ key: 68, name: "d"})
+        } else {
+            document.getElementById("right").value = JSON.parse(localStorage.right).name.toLocaleUpperCase()
+        }
+        if ( !localStorage.down ) {
+            localStorage.down = JSON.stringify({ key: 83, name: "s"})
+        } else {
+            document.getElementById("down").value = JSON.parse(localStorage.down).name.toLocaleUpperCase()
+        }
+
+        document.addEventListener("mouseup", (e) => {
+            if ( e.target.id == "up" ) {
+                e.target.value = "Enter a key"
+                document.addEventListener("keyup", (e) => {
+                    e.target.value = e.key.toLocaleUpperCase();
+                    localStorage.up = JSON.stringify({key: e.keyCode, name: e.key})
+                })
+                
+            } 
+            if ( e.target.id == "down" ) {
+                e.target.value = "Enter a key"
+                document.addEventListener("keyup", (e) => {
+                    e.target.value = e.key.toLocaleUpperCase();
+                    localStorage.down = JSON.stringify({key: e.keyCode, name: e.key})
+                })
+                
+            } 
+            if ( e.target.id == "left" ) {
+                e.target.value = "Enter a key"
+                document.addEventListener("keyup", (e) => {
+                    e.target.value = e.key.toLocaleUpperCase();
+                    localStorage.left = JSON.stringify({key: e.keyCode, name: e.key})
+                })
+                
+            } 
+            if ( e.target.id == "right" ) {
+                e.target.value = "Enter a key"
+                document.addEventListener("keyup", (e) => {
+                    e.target.value = e.key.toLocaleUpperCase();
+                    localStorage.right = JSON.stringify({key: e.keyCode, name: e.key});
+                })
+            }
+        })
+    </script>
 </body>
 </html>

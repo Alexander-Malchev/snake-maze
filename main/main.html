@@ -167,8 +167,8 @@
     var apple = []
 
     //system vars
-    let stoped = true, runned = false;
-    let b = 0, updates = 0;
+    let stoped = true, runned = false, proggress = 0, shouldSwitch = true;
+    let b = 0, updates = 0, currentCanvas = {width: canvas.width, height: canvas.height};
 
     //removing walls
     function removeWall(cell1, cell2) {
@@ -313,9 +313,9 @@
 
     //generating empty grid
     function reset () {
-        for ( let x = 0; x < canvas.width / w; x ++ ) {
+        for ( let x = 0; x < currentCanvas.width / w; x ++ ) {
             grid[x] = []
-            for ( let y = 0; y < canvas.height / w; y ++ ) {
+            for ( let y = 0; y < currentCanvas.height / w; y ++ ) {
                 grid[x][y] = new Cell(x * w, y * w)
                 /* grid[x][y].wall[Math.floor (Math.random () * grid[x][y].wall.length)] 				= Math.floor (Math.random () * 100) > 50 */
             }
@@ -384,19 +384,19 @@
         if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
             player.dy = 0
         }
-        if (keyPressed[65] && !grid[player.x][player.y].wall[3] && player.dx != 1 ) {
+        if (keyPressed[JSON.parse(localStorage.left).key] && !grid[player.x][player.y].wall[3] && player.dx != 1 ) {
             player.dx = -1;
             player.dy = 0
             runned = stoped;
-        } else if ( keyPressed[68] && !grid[player.x][player.y].wall[1] && player.dx != -1) {
+        } else if ( keyPressed[JSON.parse(localStorage.right).key] && !grid[player.x][player.y].wall[1] && player.dx != -1) {
             player.dx = 1;
             player.dy = 0
             runend = stoped;
-        } else if (keyPressed[87] && !grid[player.x][player.y].wall[0] && player.dy != 1) {
+        } else if (keyPressed[JSON.parse(localStorage.up).key] && !grid[player.x][player.y].wall[0] && player.dy != 1) {
             player.dy = -1;
             player.dx = 0
             runend = stoped;
-        } else if ( keyPressed[83] && !grid[player.x][player.y].wall[2] && player.dy != -1) {
+        } else if ( keyPressed[JSON.parse(localStorage.down).key] && !grid[player.x][player.y].wall[2] && player.dy != -1) {
             player.dy = 1
             player.dx = 0
             runend = stoped;
@@ -422,34 +422,10 @@
         window.requestAnimationFrame(draw)
         context.clearRect(0, 0, canvas.width, canvas.height)
 
-        //player
-        const pls = w - 1
-        const h = 1
-        context.fillStyle = "green";
-        context.fillRect(player.x * w + h, player.y * w + h, pls, pls)
-
-        //finish
-        context.fillStyle = "orange"
-        context.fillRect ( canvas.width - w, canvas.height - w, w, w)
-
-        //player's queue
-        for ( let n = 0; n < player.queue.length; n ++ ) {
-            context.fillStyle = "green";
-            context.fillRect(player.queue[n].x * w + h, player.queue[n].y * w + h, pls, pls)
-        }
-
-        //maze  
-        for ( let x = 0; x < grid.length; x ++ ) {
-                for ( let y = 0; y < grid[x].length; y++){
-                grid[x][y].show()
-            }
-        }
-
-        for ( let i = 0; i < apple.length; i++ ) {
-            apple[i].show()
-        }
-
         current.visited = true;
+        if (!finished) {
+            proggress++;
+        }
         var next = current.checkNeighbours()
         if ( next ) {
             visitedcell.push(current)
@@ -466,6 +442,61 @@
                 finished = true;
             }
         }
+
+        if (!finished) {
+            canvas.width = 1137;
+            canvas.height = 680;
+            var img = new Image()
+            img.src = "/images/snake.png";
+            context.drawImage(img, 0, 0, canvas.width, canvas.height)
+            context.fillStyle = "black";
+            context.globalAlpha = 0.5;
+            context.fillRect(30, canvas.height - 50, 100, 20)
+            context.globalAlpha = 1;
+            for ( let i = 0; i < 100; i += 20 ) {
+                context.fillStyle = "red";
+                context.fillRect(30 + i, canvas.height - 45, 10, 10)
+            }
+
+            context.fillStyle = "white"
+            context.font = "20px Arial";
+            let f = proggress / ( (grid.length * grid[0].length) / 100 ) / 2
+            context.fillText(`${Math.floor(f)}%`, 35, canvas.height - 70) 
+            context.fillStyle = "green";
+            //x / 100 * (grid.length + grid[0].length) = proggress
+            //x = ( (grid.length + grid[0].length) / 100 ) / proggress
+            context.fillRect(30, canvas.height - 50, f, 20)
+        } else {
+            canvas.width = currentCanvas.width;
+            canvas.height = currentCanvas.height;  
+            //maze  
+            context.globalAlpha = 1;
+            for ( let x = 0; x < grid.length; x ++ ) {
+                    for ( let y = 0; y < grid[x].length; y++){
+                    grid[x][y].show()
+                }
+            }
+            //player
+            const pls = w - 1
+            const h = 1
+            context.fillStyle = "green";
+            context.fillRect(player.x * w + h, player.y * w + h, pls, pls)
+
+            //finish
+            context.fillStyle = "orange"
+            context.fillRect ( canvas.width - w, canvas.height - w, w, w)
+
+            //player's queue
+            for ( let n = 0; n < player.queue.length; n ++ ) {
+                context.fillStyle = "green";
+                context.fillRect(player.queue[n].x * w + h, player.queue[n].y * w + h, pls, pls)
+            }
+
+            //apple
+            for ( let i = 0; i < apple.length; i++ ) {
+                apple[i].show()
+            }
+        }
         if (player.x == grid.length - 1 && player.y == grid[0].length - 1) {
             score++;
             makeGET(window.location.href.replace("offline", "") + "score/" + score, (res) => {
@@ -474,6 +505,8 @@
             })
             player.x = 0;
             player.y = 0;
+            finished = false
+            proggress = 0
             reset()
         }
     }
