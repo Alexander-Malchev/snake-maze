@@ -56,6 +56,7 @@
 
     var m = 0;
     var username = prompt("Enter your username")
+    username = username == null ? "Player" : username 
 
     $("#mode").click( () => {
         m++;
@@ -495,7 +496,9 @@
                 if ( player.queue[i].x == player.x && player.queue[i].y == player.y && !(player.dx == 0 && player.dy == 0) ) {
                     player.queueLength -= (i + 1);
                     player.score -= (i + 1);
-                    break;
+                    while(player.queue.length > player.queueLength) {
+                        player.queue.shift()
+                    }
                 }
             }
 

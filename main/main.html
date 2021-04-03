@@ -160,7 +160,7 @@
         y: 0,
         dx: 0,
         dy: 0,
-        queue: [], 
+        queue: new Array(6).fill({x: 0, y: 0}), 
         queueLength: 6
     }
 
@@ -368,9 +368,11 @@
             player.x += player.dx;
             player.y += player.dy;
 
-            player.queue.push({x: player.x, y: player.y})
-            if ( player.queue.length > player.queueLength ) {
-                player.queue.shift()
+            if ( !(player.dx == 0 && player.dy == 0) ) {
+                player.queue.push({x: player.x, y: player.y})
+                if ( player.queue.length > player.queueLength ) {
+                    player.queue.shift()
+                }
             }
         }
         grid[player.x][player.y].wall.forEach(w => {
@@ -384,19 +386,19 @@
         if ((grid[player.x][player.y].wall[2] && player.dy == 1) || (grid[player.x][player.y].wall[0] && player.dy == -1)) {
             player.dy = 0
         }
-        if (keyPressed[JSON.parse(localStorage.left).key] && !grid[player.x][player.y].wall[3] && player.dx != 1 ) {
+        if (keyPressed[JSON.parse(localStorage.left).key] && !grid[player.x][player.y].wall[3] && player.dx != 1 && player.x - 1 != player.queue[player.queue.length - 2].x ) {
             player.dx = -1;
             player.dy = 0
             runned = stoped;
-        } else if ( keyPressed[JSON.parse(localStorage.right).key] && !grid[player.x][player.y].wall[1] && player.dx != -1) {
+        } else if ( keyPressed[JSON.parse(localStorage.right).key] && !grid[player.x][player.y].wall[1] && player.dx != -1 && player.x + 1 != player.queue[player.queue.length - 2].x) {
             player.dx = 1;
             player.dy = 0
             runend = stoped;
-        } else if (keyPressed[JSON.parse(localStorage.up).key] && !grid[player.x][player.y].wall[0] && player.dy != 1) {
+        } else if (keyPressed[JSON.parse(localStorage.up).key] && !grid[player.x][player.y].wall[0] && player.dy != 1 && player.y - 1 != player.queue[player.queue.length - 2].y) {
             player.dy = -1;
             player.dx = 0
             runend = stoped;
-        } else if ( keyPressed[JSON.parse(localStorage.down).key] && !grid[player.x][player.y].wall[2] && player.dy != -1) {
+        } else if ( keyPressed[JSON.parse(localStorage.down).key] && !grid[player.x][player.y].wall[2] && player.dy != -1 && player.y + 1 != player.queue[player.queue.length - 2].y) {
             player.dy = 1
             player.dx = 0
             runend = stoped;
@@ -410,7 +412,6 @@
             stoped = false;
         }
         if (a == 3 && !stoped) { 
-            console.log(runend, stoped, b, a)
             player.dx = 0
             player.dy = 0
             stoped = true;
@@ -447,6 +448,7 @@
             canvas.width = 1137;
             canvas.height = 680;
             var img = new Image()
+            let f = proggress / ( (grid.length * grid[0].length) / 100 ) / 2
             img.src = "/images/snake.png";
             context.drawImage(img, 0, 0, canvas.width, canvas.height)
             context.fillStyle = "black";
@@ -460,22 +462,14 @@
 
             context.fillStyle = "white"
             context.font = "20px Arial";
-            let f = proggress / ( (grid.length * grid[0].length) / 100 ) / 2
             context.fillText(`${Math.floor(f)}%`, 35, canvas.height - 70) 
             context.fillStyle = "green";
             //x / 100 * (grid.length + grid[0].length) = proggress
             //x = ( (grid.length + grid[0].length) / 100 ) / proggress
-            context.fillRect(30, canvas.height - 50, f, 20)
+            context.fillRect(30, canvas.height - 50, Math.floor(f / 20) * 20, 20)
         } else {
             canvas.width = currentCanvas.width;
             canvas.height = currentCanvas.height;  
-            //maze  
-            context.globalAlpha = 1;
-            for ( let x = 0; x < grid.length; x ++ ) {
-                    for ( let y = 0; y < grid[x].length; y++){
-                    grid[x][y].show()
-                }
-            }
             //player
             const pls = w - 1
             const h = 1
@@ -490,6 +484,13 @@
             for ( let n = 0; n < player.queue.length; n ++ ) {
                 context.fillStyle = "green";
                 context.fillRect(player.queue[n].x * w + h, player.queue[n].y * w + h, pls, pls)
+            }
+            //maze  
+            context.globalAlpha = 1;
+            for ( let x = 0; x < grid.length; x ++ ) {
+                    for ( let y = 0; y < grid[x].length; y++){
+                    grid[x][y].show()
+                }
             }
 
             //apple
