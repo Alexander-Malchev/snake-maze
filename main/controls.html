@@ -59,7 +59,7 @@
         document.addEventListener("mouseup", (e) => {
             if ( e.target.id == "up" ) {
                 e.target.value = "Enter a key"
-                document.addEventListener("keyup", (e) => {
+                e.target.addEventListener("keyup", (e) => {
                     e.target.value = e.key.toLocaleUpperCase();
                     localStorage.up = JSON.stringify({key: e.keyCode, name: e.key})
                 })
@@ -67,7 +67,7 @@
             } 
             if ( e.target.id == "down" ) {
                 e.target.value = "Enter a key"
-                document.addEventListener("keyup", (e) => {
+                e.target.addEventListener("keyup", (e) => {
                     e.target.value = e.key.toLocaleUpperCase();
                     localStorage.down = JSON.stringify({key: e.keyCode, name: e.key})
                 })
@@ -75,7 +75,7 @@
             } 
             if ( e.target.id == "left" ) {
                 e.target.value = "Enter a key"
-                document.addEventListener("keyup", (e) => {
+                e.target.addEventListener("keyup", (e) => {
                     e.target.value = e.key.toLocaleUpperCase();
                     localStorage.left = JSON.stringify({key: e.keyCode, name: e.key})
                 })
@@ -83,7 +83,7 @@
             } 
             if ( e.target.id == "right" ) {
                 e.target.value = "Enter a key"
-                document.addEventListener("keyup", (e) => {
+                e.target.addEventListener("keyup", (e) => {
                     e.target.value = e.key.toLocaleUpperCase();
                     localStorage.right = JSON.stringify({key: e.keyCode, name: e.key});
                 })
