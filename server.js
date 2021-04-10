@@ -1,6 +1,7 @@
 const { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } = require('constants');
 const express = require('express')
 const app = express ()
+const nodemailer = require("nodemailer");
 
 const readline = require("readline");
 
@@ -8,6 +9,46 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
+
+async function Feedback(feedback) {
+  // Generate test SMTP service account from ethereal.email
+  // Only needed if you don't have a real mail account for testing
+  console.log("Creating test account data...");
+  let testAccount = await nodemailer.createTestAccount();
+  console.log('Creating test account...');
+  // create reusable transporter object using the default SMTP transport
+  let transporter = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
+    port: 465,
+    secure: true, // true for 465, false for other ports
+    auth: {
+      user: testAccount.user, // generated ethereal user
+      pass: testAccount.pass, // generated ethereal password
+    },
+  });
+  console.log("Sending feedback...")
+  console.log(testAccount.user)
+  // send mail with defined transport object
+  transporter.sendMail({
+    from: `<${testAccount.user}>`, // sender address
+    to: "<alex.malchev@abv.bg>", // list of receivers
+    subject: `${feedback.name} s  `, // Subject line
+    text: `${feedback.name} gave feedback: ${feedback.feedback}` // plain text body
+    // html: `<h1>${feedback.name} gave feedback:</h1> \n<p>${feedback.feedback}</p>`, // html body
+  }, (err, info) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('Email sent: ' + nodemailer.getTestMessageUrl(info));
+    }
+  });
+}
+app.get('/feedback/send/:feedback', (req, res) => {
+  const feedback = JSON.parse(req.params.feedback);
+  Feedback(feedback)
+    .then( () => res.send("DONE."))
+    .catch( err => res.send("Couldn't send the feedback \n[" + err.message + "]")) 
+})
 
 rl.question("> ", function saveInput(command) {
   if ( command.indexOf("kick") >= 0 ) {
@@ -39,7 +80,7 @@ app.get('/offline', (req, res) => res.sendFile(__dirname + '/main/main.html'));
 app.get('/controls', (req, res) => res.sendFile(__dirname + '/main/controls.html'));
 app.get('/online', (req, res) => res.sendFile(__dirname + '/main/multyplayer.html'))
 app.get('/img/:image', (req, res) => res.sendFile(__dirname + `/main/images/${req.params.image}.png`));
-
+app.get('/feedback', (req, res) => res.sendFile(__dirname + '/main/feedback.html'))
 
 class Player {
     constructor (x, y, id, name, texture) {
